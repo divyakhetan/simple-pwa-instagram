@@ -1,6 +1,7 @@
 importScripts('/src/js/idb.js');
+importScripts('/src/js/utility.js');
 
-var CACHE_STATIC = "static-v33";
+var CACHE_STATIC = "static-v37";
 var CACHE_DYNAMIC = "dynamic-v2";
 var STATIC_ARRAY = [
     '/',
@@ -9,6 +10,7 @@ var STATIC_ARRAY = [
 '/src/js/app.js',
 '/src/js/idb.js',
 '/src/js/feed.js',
+'/src/js/utility.js',
 '/src/js/promise.js',
 '/src/js/fetch.js',
 '/src/js/material.min.js',
@@ -19,12 +21,12 @@ var STATIC_ARRAY = [
 'https://fonts.googleapis.com/icon?family=Material+Icons',
 'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css'
 ];
-var dbPromise = idb.open('posts-store', 1, function(db){
-    if(!db.objectStoreNames.contains('posts')){
-        db.createObjectStore('posts',{keyPath: 'id'} );
+// var dbPromise = idb.open('posts-store', 1, function(db){
+//     if(!db.objectStoreNames.contains('posts')){
+//         db.createObjectStore('posts',{keyPath: 'id'} );
 
-    }
-});
+//     }
+// });
 // function trimCache(cacheName,maxItems){
 //     caches.open(CACHE_DYNAMIC).then(function(cache){
 //         return cache.keys().then(function(keys){
@@ -76,14 +78,17 @@ self.addEventListener('fetch', function(event){
     event.respondWith(fetch(event.request).then(function(res){
                 //trimCache(CACHE_DYNAMIC,4);
                 var clonedRes = res.clone();
-                clonedRes.json().then(function(data){
+                clearAllData('posts')
+                .then(function(){
+                    return clonedRes.json();
+                })
+                .then(function(data){
                     for(var key in data){
-                        dbPromise.then(function(db){
-                            var tx =  db.transaction('posts', 'readwrite');
-                            var store = tx.objectStore('posts');
-                            store.put(data[key]);
-                            return tx.complete ;
-                        });
+                        writeData('posts', data[key])
+                        // .then(function(){
+                        //     deleteItemFromData('posts', key);
+                        // })
+                        ;
                     }
                 });
                 return res;
@@ -120,6 +125,7 @@ self.addEventListener('fetch', function(event){
         );
     }
 });
+
 
 // self.addEventListener('fetch', function(event){
 //     //console.log("[Service Worker] Fetching....",event);

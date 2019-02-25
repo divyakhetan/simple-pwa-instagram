@@ -1,3 +1,4 @@
+// require("/src/js/utility.js");
 var shareImageButton = document.querySelector('#share-image-button');
 var createPostArea = document.querySelector('#create-post');
 var sharedMomentsArea = document.querySelector('#shared-moments');
@@ -5,6 +6,10 @@ var closeCreatePostModalButton = document.querySelector('#close-create-post-moda
 
 function openCreatePostModal() {
   createPostArea.style.display = 'block';
+  setTimeout(function(){
+    createPostArea.style.transform = 'translateY(0)';
+  }, 1);
+  
   if(deferredPrompt){
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(function(choiceResult){
@@ -21,7 +26,8 @@ function openCreatePostModal() {
 }
 
 function closeCreatePostModal() {
-  createPostArea.style.display = 'none';
+  createPostArea.style.transform = 'translateY(100vh)';
+  //createPostArea.style.display = 'none';
 }
 
 shareImageButton.addEventListener('click', openCreatePostModal);
@@ -80,6 +86,7 @@ function updateUI(data){
     createCard(data[i])
   }
 }
+
 var url="https://pwagram-7363c.firebaseio.com/posts.json";
 var networkDataRecieved = false;
 
@@ -96,21 +103,15 @@ fetch(url)
       dataArray.push(data[key]);
     }
     updateUI(dataArray);
-      });
+});
 
 
-if('caches' in window){
-      caches.match(url).then(function(res){ 
-          return res.json();
-      }).then(function(data){
-        console.log("from caches",data);
-        if(!networkDataRecieved){
-          
-        var dataArray= [];
-        for(var key in data){
-          dataArray.push(data[key]);
-        }
-        updateUI(dataArray);
-        }
-      });
-    }
+if('indexedDB' in window){
+    readData('posts').then(function(data){
+      if(!networkDataRecieved){
+        console.log("from cache", data);
+        updateUI(data);
+      }
+    });    
+
+}
